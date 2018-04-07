@@ -1,0 +1,44 @@
+
+* {
+    margin: 0;
+    padding: 0;
+}
+#wrap {
+    margin: auto;
+    width: 500px;
+}
+ul {
+
+}
+li {
+    line-height: 50px;
+    width: 10%;
+    float: left;
+    list-style: none;
+    text-align: center;
+}
+li > div {
+    border-top: 1px solid crimson;
+    border-left: 1px solid crimson;
+    background: transparent;
+    transition: 0.3s background;
+}
+li:last-child > div {
+    border-right: 1px solid crimson;
+}
+ul:last-child > li > div {
+    border-bottom: 1px solid crimson;
+}
+.active {
+    background: rgba(139, 255, 91, 0.85);
+    transition: 0s background;
+}
+.death {
+    background: rgba(255, 0, 0, 0.76);
+}
+ul:nth-child(1) > li > div,
+ul:nth-child(2) > li > div,
+ul:nth-child(3) > li > div,
+ul:nth-child(4) > li > div {
+    /*visibility: hidden;*/
+}

@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0,maximum-scale=1.0,minimum=1.0,user-scalable=no">
+    <title>俄罗斯方块</title>
+    <link rel="stylesheet" href="css.css">
+</head>
+<body>
+<div id="wrap"></div>
+<script>
+    var compare = function (x, y) {
+        return y - x;
+    };
+
+    Array.prototype.debupe = function () {
+        return Array.from(new Set(this));
+    }
+
+    //  随机数函数
+    function randomFn(min, max) {
+        return parseInt(Math.random() * (max - min + 1) + min);
+    }
+
+    var wrap = document.getElementById("wrap");
+    //  全部的方块
+    var allBlocks = {};
+    for (var i = 0; i < 12; i++) {
+        var ul = document.createElement("ul");
+        wrap.appendChild(ul);
+        allBlocks[i] = ul;
+        for (var j = 0; j < 10; j++) {
+            var li = document.createElement("li");
+            var div = document.createElement("div");
+            allBlocks[i][j] = div;
+            div.innerHTML = i + "," + j;
+            li.appendChild(div);
+            ul.appendChild(li);
+        }
+    }
+
+    //  init19种方块
+    var initBloacksBoxTotal = [];
+    initBloacksBoxTotal = [
+        {type: "田", name: "A", position: {0: [0, 1], 1: [0, 1]}},
+//        {
+//            type: "田",
+//            name: "A",
+//            position: {0: [0, 1], 1: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], 2: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]}
+//        },
+        {type: "一", name: "B", position: {0: [0, 1, 2, 3]}},
+//        {type: "一", name: "B", position: {0: [0, 1]}},
+        {type: "1", name: "B", position: {0: [0], 1: [0], 2: [0], 3: [0]}},
+        {type: "z", name: "C", position: {0: [1, 2], 1: [0, 1]}},
+        {type: "h", name: "C", position: {0: [0], 1: [0, 1], 2: [1]}}
+    ];
+
+    //  产生活动块
+    function ActiveBlockFactory(option) {
+        this.liveThrough = false;
+        this.isDeath = false;
+        this.type = option.type;
+        this.name = option.name;
+        this.position = this.createPosition(option.position);
+        this.className = "active";
+        this.init();
+        return this;
+    }
+
+    ActiveBlockFactory.prototype = {
+        constructor: ActiveBlockFactory,
+        init: function () {
+            this.colorActiveBlocks();
+        },
+        createPosition: function (pos) {
+            var obj = {};
+            for (var key in pos) {
+                for (var i = 0; i < pos[key].length; i++) {
+                    if (!obj[key]) {
+                        obj[key] = [];
+                    }
+                    obj[key].push(pos[key][i])
+                }
+            }
+            return obj
+        },
+        colorActiveBlocks: function () {
+            for (var key in this.position) {
+                if (isNaN(Number(key))) {
+                    return
+                }
+                if (this.position[key]) {
+                    for (var i = 0; i < this.position[key].length; i++) {
+                        var x = this.position[key][i];
+                        var activeBlock = allBlocks[key][x];
+                        activeBlock.setAttribute("class", this.className)
+                    }
+                }
+            }
+        },
+        clearActiveBlocks: function (col) {
+            var clearBlocks = this.position[col];
+            for (var i = 0; i < clearBlocks.length; i++) {
+                allBlocks[col][clearBlocks[i]].setAttribute("class", "")
+            }
+        },
+        //  变形
+        transform: function () {
+            var arr = [];
+            for (var i = positionArr.length - 1; i >= 0; i--) {
+                var key = positionArr[i];
+                for (var j = 0; j < activePosition[key].length; j++) {
+                    arr.push(activePosition[key][j])
+                }
+            }
+            arr.sort(compare);
+            arr = arr.debupe();
+            //  以上,翻转完成
+            var obj = {};
+            var row = Number(positionArr[0]);
+            var col = arr[arr.length - 1];
+            var diff = row - col;
+            for (var i = positionArr.length - 1; i >= 0; i--) {
+                var key = positionArr[i];
+                for (var j = 0; j < activePosition[key].length; j++) {
+                    var newKey = activePosition[key][j];
+                    newKey = newKey - arr[arr.length - 1];
+                    if (!obj[arr[newKey]]) {
+                        obj[arr[newKey]] = [Number(key)]
+                    } else {
+                        obj[arr[newKey]].push(Number(key))
+                    }
+                }
+                this.clearActiveBlocks(key);
+            }
+            var newObj = {};
+            for (var key in obj) {
+                for (var i = 0; i < obj[key].length; i++) {
+                    if (newObj[Number(key) + diff]) {
+                        newObj[Number(key) + diff].push(obj[key][i] - diff)
+                    } else {
+                        newObj[Number(key) + diff] = [obj[key][i] - diff];
+                    }
+                }
+            }
+            this.position = newObj;
+            this.colorActiveBlocks();
+            getPositionArr();
+        },
+        //  向左
+        toLeft: function () {
+            for (var i = positionArr.length - 1; i >= 0; i--) {
+                //  判断是否撞到了左限界
+                var key = positionArr[i];
+                for (var r = 0; r < activePosition[key].length; r++) {
+                    if (activePosition[key][r] <= 0) {
+                        var cantLeft = true;
+                        break;
+                    }
+                }
+                if (cantLeft) {
+                    return
+                }
+                for (var j = 0; j < activePosition[key].length; j++) {
+                    for (var dKey in deathBlocks) {
+                        if (!isNaN(Number(dKey))) {
+                            for (var d = 0; d < deathBlocks[dKey].length; d++) {
+                                if (Number(dKey) === Number(key) && deathBlocks[dKey][d] === activePosition[key][j] - 1) {
+                                    var cantLeft = true;
+//                                alert("装了左面 ");
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                if (cantLeft) {
+                    return
+                }
+            }
+
+            for (var i = positionArr.length - 1; i >= 0; i--) {
+                var key = positionArr[i];
+                for (var j = 0; j < activePosition[key].length; j++) {
+                    this.clearActiveBlocks(key);
+                    activePosition[key][j] = activePosition[key][j] - 1;
+                }
+
+            }
+            this.colorActiveBlocks();
+        },
+        //  向右
+        toRight: function () {
+            for (var i = positionArr.length - 1; i >= 0; i--) {
+                var key = positionArr[i];
+                //  判断向右的边界
+                for (var r = 0; r < activePosition[key].length; r++) {
+                    if (activePosition[key][r] >= 9) {
+                        var cantRight = true;
+                        break;
+                    }
+                }
+                if (cantRight) {
+                    return
+                }
+                //  判断是否撞到了死人
+                for (var j = 0; j < activePosition[key].length; j++) {
+                    for (var dKey in deathBlocks) {
+                        if (!isNaN(Number(dKey))) {
+                            for (var d = 0; d < deathBlocks[dKey].length; d++) {
+                                if (Number(dKey) === Number(key) && deathBlocks[dKey][d] === activePosition[key][j] + 1) {
+                                    var cantRight = true;
+//                                alert("装了右面");
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                if (cantRight) {
+                    return
+                }
+            }
+            for (var i = positionArr.length - 1; i >= 0; i--) {
+                var key = positionArr[i];
+                for (var j = activePosition[key].length - 1; j >= 0; j--) {
+                    this.clearActiveBlocks(key);
+                    activePosition[key][j] = activePosition[key][j] + 1;
+                }
+            }
+            this.colorActiveBlocks();
+        }
+    };
+
+    //  一个完整周期出现一次的随机数
+    var randomNumber = randomFn(0, initBloacksBoxTotal.length - 1);
+
+    var activeBlock = new ActiveBlockFactory(initBloacksBoxTotal[randomNumber]);
+
+    function DeathBlocks(originalPosition, activePosition) {
+        this.originalPosition = originalPosition;
+        this.activePosition = activePosition;
+        this.className = "death";
+        this.pointsLine = 0;
+        this.cutLine = 0;   //  判定行
+        this.init();
+        return this.originalPosition;
+    }
+
+    DeathBlocks.prototype = {
+        constructor: DeathBlocks,
+        init: function () {
+            this.createBlocks();
+            this.getPoints();
+            this.resetPosition();
+            this.colorDeathBlocks();
+        },
+        createBlocks: function () {
+            for (var deathKey in this.activePosition) {
+                for (var d = 0; d < this.activePosition[deathKey].length; d++) {
+                    if (!this.originalPosition[deathKey]) {
+                        this.originalPosition[deathKey] = [];
+                    } else {
+                        if (this.originalPosition[deathKey].indexOf(this.activePosition[deathKey][d]) !== -1) {
+                            continue;
+                        }
+                    }
+                    this.originalPosition[deathKey].push(this.activePosition[deathKey][d]);
+                }
+            }
+        },
+        getPoints: function () {
+            var deathPosition = [];
+            for (var deathKey in this.originalPosition) {
+                if (!isNaN(Number(deathKey))) {
+                    deathPosition.push(deathKey)
+                }
+            }
+            deathPosition.sort(compare);
+            deathPosition = deathPosition.debupe();
+            for (var i = 0; i < deathPosition.length; i++) {
+                var originalKey = deathPosition[i];
+                if (this.originalPosition[originalKey]) {
+                    if (this.originalPosition[originalKey].length === 10) {
+                        this.cutLine = Number(originalKey);
+                        delete  this.originalPosition[originalKey];
+                        this.clearDeathBlocks(originalKey);
+                        this.pointsLine++;
+                    }
+                }
+            }
+        },
+        clearDeathBlocks: function (obj) {
+            var clearNodes = allBlocks[obj].childNodes;
+            clearNodes.forEach(function (t) {
+                t.childNodes.item(0).setAttribute("class", "");
+            });
+        },
+        resetPosition: function () {
+            var deathPosition = [];
+            for (var deathKey in this.originalPosition) {
+                if (!isNaN(Number(deathKey))) {
+                    deathPosition.push(deathKey)
+                }
+            }
+            deathPosition.sort(compare);
+            deathPosition = deathPosition.debupe();
+//            console.log(deathPosition, this.pointsLine);
+            for (var j = 0; j < deathPosition.length; j++) {
+                //  规则
+                //  如果当前行比判定行要低,那么continue
+                if (deathPosition[j] >= this.cutLine) {
+                    continue;
+                }
+                var key = Number(deathPosition[j]) + this.pointsLine;
+                this.originalPosition[key] = this.originalPosition[deathPosition[j]];
+                this.clearDeathBlocks(deathPosition[j]);
+                delete  this.originalPosition[deathPosition[j]];
+            }
+            this.pointsLine = 0;
+        },
+        colorDeathBlocks: function () {
+            ActiveBlockFactory.prototype.colorActiveBlocks.call({
+                position: this.originalPosition,
+                className: this.className,
+            });
+        }
+    };
+
+    var isNext;
+    //  存放activeBlocks的纯对象
+    var activePosition;
+    //  存放activePosition这个对象的键的纯数组
+    var positionArr;
+
+    function getPositionArr() {
+        activePosition = activeBlock.position;
+        positionArr = [];
+        //  设置键
+        for (var posKey in activePosition) {
+            positionArr.push(posKey)
+        }
+    }
+
+    getPositionArr();
+    var mainTimer = setTimeout(main, 1000);
+    var deathBlocks = new DeathBlocks();
+
+    function main() {
+        clearTimeout(mainTimer);
+        //  正常下坠
+//        toDown();
+    }
+
+    //  常规下坠
+    function toDown() {
+        for (var i = positionArr.length - 1; i >= 0; i--) {
+            var key = positionArr[i];
+            if (key >= 11) {
+                isNext = true;
+                break;
+            }
+            for (var j = 0; j < activePosition[key].length; j++) {
+                for (var dKey in deathBlocks) {
+                    if (!isNaN(Number(dKey))) {
+                        for (var d = 0; d < deathBlocks[dKey].length; d++) {
+                            if (Number(dKey) === Number(key) + 1 && deathBlocks[dKey][d] === activePosition[key][j]) {
+                                if (!activeBlock.liveThrough) {
+                                    activeBlock.isDeath = true;
+                                }
+                                isNext = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (activeBlock.isDeath) {
+            console.log("死了")
+        } else {
+            if (isNext) {
+                deathBlocks = new DeathBlocks(deathBlocks, activePosition);
+                randomNumber = randomFn(0, initBloacksBoxTotal.length - 1);
+                activeBlock = new ActiveBlockFactory(initBloacksBoxTotal[randomNumber]);
+            } else {
+                activeBlock.liveThrough = true;
+                for (var i = positionArr.length - 1; i >= 0; i--) {
+                    var key = positionArr[i];
+                    for (var j = 0; j < activePosition[key].length; j++) {
+                        if (activePosition[key - -1]) {
+                            activePosition[key - -1].push(activePosition[key][j])
+                        } else {
+                            activePosition[key - -1] = [activePosition[key][j]]
+                        }
+                    }
+                    activeBlock.clearActiveBlocks(key);
+                    delete activePosition[key];
+                }
+                activeBlock.colorActiveBlocks();
+            }
+            //  结束一次循环
+            isNext = false;
+            clearTimeout(mainTimer)
+            mainTimer = setTimeout(main, 1111);
+        }
+        getPositionArr();
+    }
+
+    window.onkeyup = function (e) {
+        switch (e.keyCode) {
+            case 38: {
+                //  向上
+                activeBlock.transform();
+                break;
+            }
+            case 39: {
+                //  向右
+                activeBlock.toRight();
+                break;
+            }
+            case 37: {
+                //  向左
+                activeBlock.toLeft();
+                break;
+            }
+            case 40: {
+                toDown();
+                break;
+            }
+        }
+    }
+</script>
+</body>
+</html>
