@@ -16,7 +16,7 @@
 
     Array.prototype.debupe = function () {
         return Array.from(new Set(this));
-    }
+    };
 
     //  随机数函数
     function randomFn(min, max) {
@@ -41,19 +41,26 @@
     }
 
     //  init19种方块
-    var initBloacksBoxTotal = [];
-    initBloacksBoxTotal = [
+    var initBloacksBoxTotal = [
         {type: "田", name: "A", position: {0: [0, 1], 1: [0, 1]}},
-//        {
-//            type: "田",
-//            name: "A",
-//            position: {0: [0, 1], 1: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], 2: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]}
-//        },
         {type: "一", name: "B", position: {0: [0, 1, 2, 3]}},
-//        {type: "一", name: "B", position: {0: [0, 1]}},
         {type: "1", name: "B", position: {0: [0], 1: [0], 2: [0], 3: [0]}},
         {type: "z", name: "C", position: {0: [1, 2], 1: [0, 1]}},
-        {type: "h", name: "C", position: {0: [0], 1: [0, 1], 2: [1]}}
+        {type: "h", name: "C", position: {0: [0], 1: [0, 1], 2: [1]}},
+        {type: "s", name: "D", position: {0: [0, 1], 1: [1, 2]}},
+        {type: "n", name: "D", position: {0: [1], 1: [0, 1], 2: [0]}},
+        {type: "L1", name: "E", position: {0: [0], 1: [0], 2: [0, 1]}},
+        {type: "L2", name: "E", position: {0: [2], 1: [0, 1, 2]}},
+        {type: "L3", name: "E", position: {0: [0, 1], 1: [1], 2: [1]}},
+        {type: "L4", name: "E", position: {0: [0, 1, 2], 1: [0]}},
+        {type: "J1", name: "F", position: {0: [1], 1: [1], 2: [0, 1]}},
+        {type: "J2", name: "F", position: {0: [0, 1, 2], 1: [2]}},
+        {type: "J3", name: "F", position: {0: [0, 1], 1: [0], 2: [0]}},
+        {type: "J4", name: "F", position: {0: [0], 1: [0, 1, 2]}},
+        {type: "T1", name: "G", position: {0: [1], 1: [0, 1, 2]}},
+        {type: "T2", name: "G", position: {0: [1], 1: [0, 1], 2: [1]}},
+        {type: "T3", name: "G", position: {0: [0, 1, 2], 1: [1]}},
+        {type: "T4", name: "G", position: {0: [0], 1: [0, 1], 2: [0]}},
     ];
 
     //  产生活动块
@@ -65,7 +72,6 @@
         this.position = this.createPosition(option.position);
         this.className = "active";
         this.init();
-        return this;
     }
 
     ActiveBlockFactory.prototype = {
@@ -124,8 +130,26 @@
             for (var i = positionArr.length - 1; i >= 0; i--) {
                 var key = positionArr[i];
                 for (var j = 0; j < activePosition[key].length; j++) {
+                    if (Number(key) - diff > 9) {
+                        console.log("不能旋转");
+                        return
+                    }
                     var newKey = activePosition[key][j];
                     newKey = newKey - arr[arr.length - 1];
+                    if (Number(arr[newKey]) + diff > 11) {
+                        console.log("不能旋转");
+                        return
+                    }
+                    for (var dKey in deathBlocks) {
+                        if (!isNaN(Number(dKey))) {
+                            for (var d = 0; d < deathBlocks[dKey].length; d++) {
+                                if (Number(arr[newKey]) + diff === Number(dKey) && Number(key) - diff === deathBlocks[dKey][d]) {
+                                    console.log("和死人撞了");
+                                    return
+                                }
+                            }
+                        }
+                    }
                     if (!obj[arr[newKey]]) {
                         obj[arr[newKey]] = [Number(key)]
                     } else {
@@ -245,7 +269,6 @@
         this.pointsLine = 0;
         this.cutLine = 0;   //  判定行
         this.init();
-        return this.originalPosition;
     }
 
     DeathBlocks.prototype = {
@@ -381,7 +404,7 @@
             console.log("死了")
         } else {
             if (isNext) {
-                deathBlocks = new DeathBlocks(deathBlocks, activePosition);
+                deathBlocks = new DeathBlocks(deathBlocks, activePosition).originalPosition;
                 randomNumber = randomFn(0, initBloacksBoxTotal.length - 1);
                 activeBlock = new ActiveBlockFactory(initBloacksBoxTotal[randomNumber]);
             } else {
@@ -402,30 +425,34 @@
             }
             //  结束一次循环
             isNext = false;
-            clearTimeout(mainTimer)
-            mainTimer = setTimeout(main, 1111);
+            clearTimeout(mainTimer);
+            mainTimer = setTimeout(main, 666);
         }
         getPositionArr();
     }
 
     window.onkeyup = function (e) {
         switch (e.keyCode) {
-            case 38: {
+            case 38:
+            {
                 //  向上
                 activeBlock.transform();
                 break;
             }
-            case 39: {
+            case 39:
+            {
                 //  向右
                 activeBlock.toRight();
                 break;
             }
-            case 37: {
+            case 37:
+            {
                 //  向左
                 activeBlock.toLeft();
                 break;
             }
-            case 40: {
+            case 40:
+            {
                 toDown();
                 break;
             }

@@ -22,6 +22,7 @@ li > div {
     border-left: 1px solid crimson;
     background: transparent;
     transition: 0.3s background;
+    color: rgba(102, 51, 153, 0.11);
 }
 li:last-child > div {
     border-right: 1px solid crimson;
@@ -31,10 +32,12 @@ ul:last-child > li > div {
 }
 .active {
     background: rgba(139, 255, 91, 0.85);
+    background: rgba(139, 255, 91, 0.33);
     transition: 0s background;
 }
 .death {
     background: rgba(255, 0, 0, 0.76);
+    background: rgba(255, 0, 0, 0.17);
 }
 ul:nth-child(1) > li > div,
 ul:nth-child(2) > li > div,
