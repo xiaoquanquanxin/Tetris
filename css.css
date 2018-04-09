@@ -3,42 +3,61 @@
     margin: 0;
     padding: 0;
 }
+
 #wrap {
     margin: auto;
     width: 500px;
 }
-ul {
 
+#wrap.mobile {
+    width: 100%!important;
 }
+
+.mobile ul {
+    width:67.98%;
+}
+
 li {
-    line-height: 50px;
+    position: relative;
+    height: 0;
+    padding-bottom: 10%;
     width: 10%;
     float: left;
     list-style: none;
     text-align: center;
 }
+
+
 li > div {
+    position: absolute;
+    height:100%;
+    width:100%;;
     border-top: 1px solid crimson;
     border-left: 1px solid crimson;
     background: transparent;
     transition: 0.3s background;
     color: rgba(102, 51, 153, 0.11);
 }
+
 li:last-child > div {
     border-right: 1px solid crimson;
 }
+
 ul:last-child > li > div {
     border-bottom: 1px solid crimson;
 }
+
 .active {
     background: rgba(139, 255, 91, 0.85);
     background: rgba(139, 255, 91, 0.33);
     transition: 0s background;
 }
+
 .death {
     background: rgba(255, 0, 0, 0.76);
     background: rgba(255, 0, 0, 0.17);
 }
+
 ul:nth-child(1) > li > div,
 ul:nth-child(2) > li > div,
 ul:nth-child(3) > li > div,

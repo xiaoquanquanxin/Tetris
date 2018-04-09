@@ -10,6 +10,14 @@
 <body>
 <div id="wrap"></div>
 <script>
+    var wrap = document.getElementById("wrap");
+    var isMobile = ((window.navigator.userAgent.match(/(phone|pad|pod|iPhone|iPod|ios|iPad|Android|Mobile|BlackBerry|IEMobile|MQQBrowser|JUC|Fennec|wOSBrowser|BrowserNG|WebOS|Symbian|Windows Phone)/i)));
+    if (isMobile) {
+        wrap.className = "mobile";
+    }
+
+</script>
+<script>
     var compare = function (x, y) {
         return y - x;
     };
@@ -23,7 +31,6 @@
         return parseInt(Math.random() * (max - min + 1) + min);
     }
 
-    var wrap = document.getElementById("wrap");
     //  全部的方块
     var allBlocks = {};
     allBlocks.height = 15;
@@ -475,6 +482,48 @@
             }
         }
     }
+</script>
+
+<script>
+    var startX = 0;
+    var endX = 0;
+    var startY = 0;
+    var endY = 0;
+    document.addEventListener("touchstart", function (e) {
+        startX = e.changedTouches[0].clientX;
+        startY = e.changedTouches[0].clientY;
+    }, false);
+    document.addEventListener("touchmove", function (e) {
+        console.log('移动');
+        e.preventDefault();
+    });
+    document.addEventListener("touchend", function (e) {
+        endX = e.changedTouches[0].clientX;
+        endY = e.changedTouches[0].clientY;
+        if (endX - startX == 0 && endY - startY == 0) {
+            return
+        }
+        var absX = endX - startX;
+        var diffX = Math.abs(absX);
+        var absY = endY - startY;
+        var diffY = Math.abs(absY);
+        if (diffX < diffY && absY < 0) {
+            console.log("向上移动");
+            activeBlock.transform();
+        }
+        if (diffX < diffY && absY > 0) {
+            console.log("向下移动");
+            toDown();
+        }
+        if (diffX > diffY && absX < 0) {
+            console.log("向左移动");
+            activeBlock.toLeft();
+        }
+        if (diffX > diffY && absX > 0) {
+            console.log("向右移动");
+            activeBlock.toRight();
+        }
+    }, false)
 </script>
 </body>
 </html>
