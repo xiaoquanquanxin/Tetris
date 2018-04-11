@@ -10,8 +10,15 @@
 <body>
 <div id="wrap"></div>
 <script>
+    //  数组去重
     Array.prototype.debupe = function () {
-        return Array.from(new Set(this));
+        var arr = [];
+        for (var i = 0; i < this.length; i++) {
+            if (arr.indexOf(this[i]) === -1) {
+                arr.push(this[i])
+            }
+        }
+        return arr;
     };
     window.addLoadEvent = function (newFn) {
         if (newFn) {
@@ -414,7 +421,6 @@
             this.getPoints();
             this.colorDeathBlocks();
         },
-
         createBlocks: function () {
             for (var deathKey in this.activePosition) {
                 for (var d = 0; d < this.activePosition[deathKey].length; d++) {
