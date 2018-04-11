@@ -10,46 +10,34 @@
 <body>
 <div id="wrap"></div>
 <script>
-    var wrap = document.getElementById("wrap");
-    var isMobile = ((window.navigator.userAgent.match(/(phone|pad|pod|iPhone|iPod|ios|iPad|Android|Mobile|BlackBerry|IEMobile|MQQBrowser|JUC|Fennec|wOSBrowser|BrowserNG|WebOS|Symbian|Windows Phone)/i)));
-    if (isMobile) {
-        wrap.className = "mobile";
-    }
-
-</script>
-<script>
-    var compare = function (x, y) {
-        return y - x;
-    };
-
     Array.prototype.debupe = function () {
         return Array.from(new Set(this));
     };
-
-    //  随机数函数
-    function randomFn(min, max) {
-        return parseInt(Math.random() * (max - min + 1) + min);
-    }
-
+    window.addLoadEvent = function (newFn) {
+        if (newFn) {
+            var oldFn = window.onload;
+            if ((typeof  oldFn).toLowerCase() === "function") {
+                window.onload = function () {
+                    oldFn();
+                    newFn();
+                }
+            } else {
+                newFn();
+            }
+        }
+    };
     //  全部的方块
     var allBlocks = {};
+    //  行数
     allBlocks.height = 15;
-    for (var i = 0; i < allBlocks.height; i++) {
-        var ul = document.createElement("ul");
-        wrap.appendChild(ul);
-        allBlocks[i] = ul;
-        for (var j = 0; j < 10; j++) {
-            var li = document.createElement("li");
-            var div = document.createElement("div");
-            allBlocks[i][j] = div;
-            div.innerHTML = i + "," + j;
-            li.appendChild(div);
-            ul.appendChild(li);
-        }
-    }
-
+    //  定时器
+    allBlocks.mainTimer = null;
+    //  外层div
+    allBlocks.wrap = document.getElementById("wrap");
+    //  出现下一个
+    allBlocks.isNext = false;
     //  init19种方块
-    var initBloacksBoxTotal = [
+    allBlocks.initBloacksBoxTotal = [
         {type: "田", name: "A", position: {0: [0, 1], 1: [0, 1]}},
         {type: "一", name: "B", position: {0: [0, 1, 2, 3]}},
         {type: "1", name: "B", position: {0: [0], 1: [0], 2: [0], 3: [0]}},
@@ -88,13 +76,130 @@
 //            }
 //        },
     ];
+    //  按大小排序，从大到小
+    allBlocks.compare = function (x, y) {
+        return y - x;
+    };
+    //  随机数
+    allBlocks.randomFn = function (min, max) {
+        return parseInt(Math.random() * (max - min + 1) + min);
+    };
+    //  PC端移动事件
+    allBlocks.PCMove = function () {
+        window.onkeyup = function (e) {
+            switch (e.keyCode) {
+                case 38:
+                {
+                    //  向上
+                    activeBlock.transform();
+                    break;
+                }
+                case 39:
+                {
+                    //  向右
+                    activeBlock.toRight();
+                    break;
+                }
+                case 37:
+                {
+                    //  向左
+                    activeBlock.toLeft();
+                    break;
+                }
+                case 40:
+                {
+                    toDown();
+                    break;
+                }
+            }
+        }
+    };
+    //  移动端移动事件
+    allBlocks.MobileMove = function () {
+        var startX = 0;
+        var endX = 0;
+        var startY = 0;
+        var endY = 0;
+        document.addEventListener("touchstart", function (e) {
+            e.preventDefault();
+            startX = e.changedTouches[0].clientX;
+            startY = e.changedTouches[0].clientY;
+        }, false);
+        document.addEventListener("touchmove", function (e) {
+            console.log('移动');
+            e.preventDefault();
+        });
+        document.addEventListener("touchend", function (e) {
+            e.preventDefault();
+            endX = e.changedTouches[0].clientX;
+            endY = e.changedTouches[0].clientY;
+            if (endX - startX == 0 && endY - startY == 0) {
+                return
+            }
+            var absX = endX - startX;
+            var diffX = Math.abs(absX);
+            var absY = endY - startY;
+            var diffY = Math.abs(absY);
+            if (diffX < diffY && absY < 0) {
+                console.log("向上移动");
+                activeBlock.transform();
+            }
+            if (diffX < diffY && absY > 0) {
+                console.log("向下移动");
+                toDown();
+            }
+            if (diffX > diffY && absX < 0) {
+                console.log("向左移动");
+                activeBlock.toLeft();
+            }
+            if (diffX > diffY && absX > 0) {
+                console.log("向右移动");
+                activeBlock.toRight();
+            }
+        }, false);
+    };
+    //  产生块
+    allBlocks.createBlocks = function () {
+        for (var i = 0; i < allBlocks.height; i++) {
+            var ul = document.createElement("ul");
+            allBlocks.wrap.appendChild(ul);
+            allBlocks[i] = ul;
+            for (var j = 0; j < 10; j++) {
+                var li = document.createElement("li");
+                var div = document.createElement("div");
+                allBlocks[i][j] = div;
+                div.innerHTML = i + "," + j;
+                li.appendChild(div);
+                ul.appendChild(li);
+            }
+        }
+    };
+    //  初始化
+    allBlocks.init = function () {
+        var isMobile = ((window.navigator.userAgent.match(/(phone|pad|pod|iPhone|iPod|ios|iPad|Android|Mobile|BlackBerry|IEMobile|MQQBrowser|JUC|Fennec|wOSBrowser|BrowserNG|WebOS|Symbian|Windows Phone)/i)));
+        if (isMobile) {
+            allBlocks.wrap.className = "mobile";
+        }
+        window.addLoadEvent(allBlocks.MobileMove);
+        window.addLoadEvent(allBlocks.PCMove);
+        window.addLoadEvent(function () {
+            activeBlock = new ActiveBlockFactory(allBlocks.initBloacksBoxTotal[allBlocks.randomNumber]);
+            deathBlocks = new DeathBlocks();
+            allBlocks.mainTimer = setTimeout(main, 666);
+        });
+    };
 
-    //  产生活动块
+    allBlocks.createBlocks();
+    //  一个完整周期出现一次的随机数
+    allBlocks.randomNumber = allBlocks.randomFn(0, allBlocks.initBloacksBoxTotal.length - 1);
+
+    //  构造当前块
     function ActiveBlockFactory(option) {
         this.liveThrough = false;
         this.isDeath = false;
         this.type = option.type;
         this.name = option.name;
+        this.positionArr = [];
         this.position = this.createPosition(option.position);
         this.className = "active";
         this.init();
@@ -104,6 +209,7 @@
         constructor: ActiveBlockFactory,
         init: function () {
             this.colorActiveBlocks();
+            this.getPositionArr();
         },
         createPosition: function (pos) {
             var obj = {};
@@ -140,27 +246,27 @@
         //  变形
         transform: function () {
             var arr = [];
-            for (var i = positionArr.length - 1; i >= 0; i--) {
-                var key = positionArr[i];
-                for (var j = 0; j < activePosition[key].length; j++) {
-                    arr.push(activePosition[key][j])
+            for (var i = this.positionArr.length - 1; i >= 0; i--) {
+                var key = this.positionArr[i];
+                for (var j = 0; j < this.position[key].length; j++) {
+                    arr.push(this.position[key][j])
                 }
             }
-            arr.sort(compare);
+            arr.sort(allBlocks.compare);
             arr = arr.debupe();
             //  以上,翻转完成
             var obj = {};
-            var row = Number(positionArr[0]);
+            var row = Number(this.positionArr[0]);
             var col = arr[arr.length - 1];
             var diff = row - col;
-            for (var i = positionArr.length - 1; i >= 0; i--) {
-                var key = positionArr[i];
-                for (var j = 0; j < activePosition[key].length; j++) {
+            for (var i = this.positionArr.length - 1; i >= 0; i--) {
+                var key = this.positionArr[i];
+                for (var j = 0; j < this.position[key].length; j++) {
                     if (Number(key) - diff > 9) {
                         console.log("不能旋转");
                         return
                     }
-                    var newKey = activePosition[key][j];
+                    var newKey = this.position[key][j];
                     newKey = newKey - arr[arr.length - 1];
                     if (Number(arr[newKey]) + diff > allBlocks.height - 1) {
                         console.log("不能旋转");
@@ -196,15 +302,15 @@
             }
             this.position = newObj;
             this.colorActiveBlocks();
-            getPositionArr();
+            this.getPositionArr();
         },
         //  向左
         toLeft: function () {
-            for (var i = positionArr.length - 1; i >= 0; i--) {
+            for (var i = this.positionArr.length - 1; i >= 0; i--) {
                 //  判断是否撞到了左限界
-                var key = positionArr[i];
-                for (var r = 0; r < activePosition[key].length; r++) {
-                    if (activePosition[key][r] <= 0) {
+                var key = this.positionArr[i];
+                for (var r = 0; r < this.position[key].length; r++) {
+                    if (this.position[key][r] <= 0) {
                         var cantLeft = true;
                         break;
                     }
@@ -212,11 +318,11 @@
                 if (cantLeft) {
                     return
                 }
-                for (var j = 0; j < activePosition[key].length; j++) {
+                for (var j = 0; j < this.position[key].length; j++) {
                     for (var dKey in deathBlocks) {
                         if (!isNaN(Number(dKey))) {
                             for (var d = 0; d < deathBlocks[dKey].length; d++) {
-                                if (Number(dKey) === Number(key) && deathBlocks[dKey][d] === activePosition[key][j] - 1) {
+                                if (Number(dKey) === Number(key) && deathBlocks[dKey][d] === this.position[key][j] - 1) {
                                     var cantLeft = true;
 //                                alert("装了左面 ");
                                     break;
@@ -230,11 +336,11 @@
                 }
             }
 
-            for (var i = positionArr.length - 1; i >= 0; i--) {
-                var key = positionArr[i];
-                for (var j = 0; j < activePosition[key].length; j++) {
+            for (var i = this.positionArr.length - 1; i >= 0; i--) {
+                var key = this.positionArr[i];
+                for (var j = 0; j < this.position[key].length; j++) {
                     this.clearActiveBlocks(key);
-                    activePosition[key][j] = activePosition[key][j] - 1;
+                    this.position[key][j] = this.position[key][j] - 1;
                 }
 
             }
@@ -242,11 +348,11 @@
         },
         //  向右
         toRight: function () {
-            for (var i = positionArr.length - 1; i >= 0; i--) {
-                var key = positionArr[i];
+            for (var i = this.positionArr.length - 1; i >= 0; i--) {
+                var key = this.positionArr[i];
                 //  判断向右的边界
-                for (var r = 0; r < activePosition[key].length; r++) {
-                    if (activePosition[key][r] >= 9) {
+                for (var r = 0; r < this.position[key].length; r++) {
+                    if (this.position[key][r] >= 9) {
                         var cantRight = true;
                         break;
                     }
@@ -255,11 +361,11 @@
                     return
                 }
                 //  判断是否撞到了死人
-                for (var j = 0; j < activePosition[key].length; j++) {
+                for (var j = 0; j < this.position[key].length; j++) {
                     for (var dKey in deathBlocks) {
                         if (!isNaN(Number(dKey))) {
                             for (var d = 0; d < deathBlocks[dKey].length; d++) {
-                                if (Number(dKey) === Number(key) && deathBlocks[dKey][d] === activePosition[key][j] + 1) {
+                                if (Number(dKey) === Number(key) && deathBlocks[dKey][d] === this.position[key][j] + 1) {
                                     var cantRight = true;
 //                                alert("装了右面");
                                     break;
@@ -272,22 +378,25 @@
                     return
                 }
             }
-            for (var i = positionArr.length - 1; i >= 0; i--) {
-                var key = positionArr[i];
-                for (var j = activePosition[key].length - 1; j >= 0; j--) {
+            for (var i = this.positionArr.length - 1; i >= 0; i--) {
+                var key = this.positionArr[i];
+                for (var j = this.position[key].length - 1; j >= 0; j--) {
                     this.clearActiveBlocks(key);
-                    activePosition[key][j] = activePosition[key][j] + 1;
+                    this.position[key][j] = this.position[key][j] + 1;
                 }
             }
             this.colorActiveBlocks();
+        },
+        //  获得当前对象的键
+        getPositionArr: function () {
+            this.positionArr = [];
+            //  设置键
+            for (var posKey in this.position) {
+                this.positionArr.push(posKey)
+            }
         }
     };
-
-    //  一个完整周期出现一次的随机数
-    var randomNumber = randomFn(0, initBloacksBoxTotal.length - 1);
-
-    var activeBlock = new ActiveBlockFactory(initBloacksBoxTotal[randomNumber]);
-
+    //  构造死亡块
     function DeathBlocks(originalPosition, activePosition) {
         this.originalPosition = originalPosition;
         this.deathPosition = [];
@@ -322,7 +431,7 @@
             for (var dKey in this.originalPosition) {
                 (!isNaN(Number(dKey))) && this.deathPosition.push(dKey);
             }
-            this.deathPosition.sort(compare);
+            this.deathPosition.sort(allBlocks.compare);
             this.deathPosition = this.deathPosition.debupe();
         },
         getPoints: function () {
@@ -346,7 +455,7 @@
             for (var deathKey in this.originalPosition) {
                 (!isNaN(Number(deathKey))) && deathPosition.push(deathKey);
             }
-            deathPosition.sort(compare);
+            deathPosition.sort(allBlocks.compare);
             deathPosition = deathPosition.debupe();
             for (var i = 0; i < this.deathPosition.length; i++) {
                 if (i == deathPosition.length) {
@@ -375,48 +484,32 @@
         }
     };
 
-    var isNext;
-    //  存放activeBlocks的纯对象
-    var activePosition;
-    //  存放activePosition这个对象的键的纯数组
-    var positionArr;
-
-    function getPositionArr() {
-        activePosition = activeBlock.position;
-        positionArr = [];
-        //  设置键
-        for (var posKey in activePosition) {
-            positionArr.push(posKey)
-        }
-    }
-
-    getPositionArr();
-    var mainTimer = setTimeout(main, 1000);
-    var deathBlocks = new DeathBlocks();
+    var activeBlock;
+    var deathBlocks;
 
     function main() {
-        clearTimeout(mainTimer);
+        clearTimeout(allBlocks.mainTimer);
         //  正常下坠
         toDown();
     }
 
     //  常规下坠
     function toDown() {
-        for (var i = positionArr.length - 1; i >= 0; i--) {
-            var key = positionArr[i];
+        for (var i = activeBlock.positionArr.length - 1; i >= 0; i--) {
+            var key = activeBlock.positionArr[i];
             if (key >= allBlocks.height - 1) {
-                isNext = true;
+                allBlocks.isNext = true;
                 break;
             }
-            for (var j = 0; j < activePosition[key].length; j++) {
+            for (var j = 0; j < activeBlock.position[key].length; j++) {
                 for (var dKey in deathBlocks) {
                     if (!isNaN(Number(dKey))) {
                         for (var d = 0; d < deathBlocks[dKey].length; d++) {
-                            if (Number(dKey) === Number(key) + 1 && deathBlocks[dKey][d] === activePosition[key][j]) {
+                            if (Number(dKey) === Number(key) + 1 && deathBlocks[dKey][d] === activeBlock.position[key][j]) {
                                 if (!activeBlock.liveThrough) {
                                     activeBlock.isDeath = true;
                                 }
-                                isNext = true;
+                                allBlocks.isNext = true;
                                 break;
                             }
                         }
@@ -427,103 +520,36 @@
         if (activeBlock.isDeath) {
             console.log("死了")
         } else {
-            if (isNext) {
-                deathBlocks = new DeathBlocks(deathBlocks, activePosition).originalPosition;
-                randomNumber = randomFn(0, initBloacksBoxTotal.length - 1);
-                activeBlock = new ActiveBlockFactory(initBloacksBoxTotal[randomNumber]);
+            if (allBlocks.isNext) {
+                deathBlocks = new DeathBlocks(deathBlocks, activeBlock.position).originalPosition;
+                allBlocks.randomNumber = allBlocks.randomFn(0, allBlocks.initBloacksBoxTotal.length - 1);
+                activeBlock = new ActiveBlockFactory(allBlocks.initBloacksBoxTotal[allBlocks.randomNumber]);
             } else {
                 activeBlock.liveThrough = true;
-                for (var i = positionArr.length - 1; i >= 0; i--) {
-                    var key = positionArr[i];
-                    for (var j = 0; j < activePosition[key].length; j++) {
-                        if (activePosition[key - -1]) {
-                            activePosition[key - -1].push(activePosition[key][j])
+                for (var i = activeBlock.positionArr.length - 1; i >= 0; i--) {
+                    var key = activeBlock.positionArr[i];
+                    for (var j = 0; j < activeBlock.position[key].length; j++) {
+                        if (activeBlock.position[key - -1]) {
+                            activeBlock.position[key - -1].push(activeBlock.position[key][j])
                         } else {
-                            activePosition[key - -1] = [activePosition[key][j]]
+                            activeBlock.position[key - -1] = [activeBlock.position[key][j]]
                         }
                     }
                     activeBlock.clearActiveBlocks(key);
-                    delete activePosition[key];
+                    delete activeBlock.position[key];
                 }
                 activeBlock.colorActiveBlocks();
             }
             //  结束一次循环
-            isNext = false;
-            clearTimeout(mainTimer);
-            mainTimer = setTimeout(main, 666);
+            allBlocks.isNext = false;
+            clearTimeout(allBlocks.mainTimer);
+            allBlocks.mainTimer = setTimeout(main, 666);
         }
-        getPositionArr();
+        activeBlock.getPositionArr();
     }
 
-    window.onkeyup = function (e) {
-        switch (e.keyCode) {
-            case 38:
-            {
-                //  向上
-                activeBlock.transform();
-                break;
-            }
-            case 39:
-            {
-                //  向右
-                activeBlock.toRight();
-                break;
-            }
-            case 37:
-            {
-                //  向左
-                activeBlock.toLeft();
-                break;
-            }
-            case 40:
-            {
-                toDown();
-                break;
-            }
-        }
-    }
-</script>
+    allBlocks.init();
 
-<script>
-    var startX = 0;
-    var endX = 0;
-    var startY = 0;
-    var endY = 0;
-    document.addEventListener("touchstart", function (e) {
-        startX = e.changedTouches[0].clientX;
-        startY = e.changedTouches[0].clientY;
-    }, false);
-    document.addEventListener("touchmove", function (e) {
-        console.log('移动');
-        e.preventDefault();
-    });
-    document.addEventListener("touchend", function (e) {
-        endX = e.changedTouches[0].clientX;
-        endY = e.changedTouches[0].clientY;
-        if (endX - startX == 0 && endY - startY == 0) {
-            return
-        }
-        var absX = endX - startX;
-        var diffX = Math.abs(absX);
-        var absY = endY - startY;
-        var diffY = Math.abs(absY);
-        if (diffX < diffY && absY < 0) {
-            console.log("向上移动");
-            activeBlock.transform();
-        }
-        if (diffX < diffY && absY > 0) {
-            console.log("向下移动");
-            toDown();
-        }
-        if (diffX > diffY && absX < 0) {
-            console.log("向左移动");
-            activeBlock.toLeft();
-        }
-        if (diffX > diffY && absX > 0) {
-            console.log("向右移动");
-            activeBlock.toRight();
-        }
-    }, false)
 </script>
 </body>
 </html>
