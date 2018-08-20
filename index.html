@@ -128,16 +128,15 @@
         var startY = 0;
         var endY = 0;
         document.addEventListener("touchstart", function (e) {
-            e.preventDefault();
+            preventDefalut(e);
             startX = e.changedTouches[0].clientX;
             startY = e.changedTouches[0].clientY;
         }, false);
         document.addEventListener("touchmove", function (e) {
-            console.log('移动');
-            e.preventDefault();
+            preventDefalut(e);
         });
         document.addEventListener("touchend", function (e) {
-            e.preventDefault();
+            preventDefalut(e);
             endX = e.changedTouches[0].clientX;
             endY = e.changedTouches[0].clientY;
             if (endX - startX == 0 && endY - startY == 0) {
@@ -164,6 +163,14 @@
                 activeBlock.toRight();
             }
         }, false);
+        function preventDefalut(e){
+            if (e.cancelable) {
+                // 判断默认行为是否已经被禁用
+                if (!e.defaultPrevented) {
+                    e.preventDefault();
+                }
+            }
+        }
     };
     //  产生块
     allBlocks.createBlocks = function () {
@@ -473,8 +480,6 @@
                     delete this.originalPosition[deathPosition[i]];
                 }
             }
-            debugger;
-
         },
         clearDeathBlocks: function (obj) {
             var clearNodes = allBlocks[obj].childNodes;
